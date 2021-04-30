@@ -1,6 +1,7 @@
 /**
  * d3.tip
  * Copyright (c) 2013-2017 Justin Palmer
+ * rootElement fixes by Samih Munshi 2021
  *
  * Tooltips for d3.js SVG visualizations
  */
@@ -146,7 +147,7 @@ export default function() {
   // Returns root node of tip
   tip.rootElement = function(v) {
     if (!arguments.length) return rootElement
-    rootElement = v == null ? v : functor(v)
+    rootElement = v ? v : document.body
 
     return tip
   }
@@ -179,73 +180,73 @@ export default function() {
       directions = directionCallbacks.keys()
 
   function directionNorth() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.n.y - node.offsetHeight,
-      left: bbox.n.x - node.offsetWidth / 2
+      top:  bcRect.y - getScrollTop(this) - node.offsetHeight,
+      left: bcRect.x - getScrollLeft(this) + bcRect.width / 2 - node.offsetWidth / 2
     }
   }
 
   function directionSouth() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.s.y,
-      left: bbox.s.x - node.offsetWidth / 2
+      top:  bcRect.y - getScrollTop(this) + bcRect.height,
+      left: bcRect.x - getScrollLeft(this) + bcRect.width / 2 - node.offsetWidth / 2
     }
   }
 
   function directionEast() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.e.y - node.offsetHeight / 2,
-      left: bbox.e.x
+      top:  bcRect.y - getScrollTop(this) + bcRect.height / 2 - node.offsetHeight / 2,
+      left: bcRect.x - getScrollLeft(this) + bcRect.width
     }
   }
 
   function directionWest() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.w.y - node.offsetHeight / 2,
-      left: bbox.w.x - node.offsetWidth
+      top:  bcRect.y - getScrollTop(this) + bcRect.height / 2 - node.offsetHeight / 2,
+      left: bcRect.x - getScrollLeft(this) - node.offsetWidth
     }
   }
 
   function directionNorthWest() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.nw.y - node.offsetHeight,
-      left: bbox.nw.x - node.offsetWidth
+      top:  bcRect.y - getScrollTop(this) - node.offsetHeight,
+      left: bcRect.x - getScrollLeft(this) - node.offsetWidth
     }
   }
 
   function directionNorthEast() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.ne.y - node.offsetHeight,
-      left: bbox.ne.x
+      top:  bcRect.y - getScrollTop(this) - node.offsetHeight,
+      left: bcRect.x - getScrollLeft(this) + bcRect.width
     }
   }
 
   function directionSouthWest() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.sw.y,
-      left: bbox.sw.x - node.offsetWidth
+      top:  bcRect.y - getScrollTop(this) + bcRect.height,
+      left: bcRect.x - getScrollLeft(this) - node.offsetWidth
     }
   }
 
   function directionSouthEast() {
-    var bbox = getScreenBBox(this)
+    const bcRect = this.getBoundingClientRect();
     return {
-      top:  bbox.se.y,
-      left: bbox.se.x
+      top:  bcRect.y - getScrollTop(this) + bcRect.height,
+      left: bcRect.x - getScrollLeft(this) + bcRect.width
     }
   }
 
   function initNode() {
     var div = select(document.createElement('div'))
     div
-      .style('position', 'absolute')
+      .style('position', 'fixed')
       .style('top', 0)
       .style('opacity', 0)
       .style('pointer-events', 'none')
@@ -270,54 +271,30 @@ export default function() {
     return select(node)
   }
 
-  // Private - gets the screen coordinates of a shape
-  //
-  // Given a shape on the screen, will return an SVGPoint for the directions
-  // n(north), s(south), e(east), w(west), ne(northeast), se(southeast),
-  // nw(northwest), sw(southwest).
-  //
-  //    +-+-+
-  //    |   |
-  //    +   +
-  //    |   |
-  //    +-+-+
-  //
-  // Returns an Object {n, s, e, w, nw, sw, ne, se}
-  function getScreenBBox(targetShape) {
-    var targetel   = target || targetShape
-
-    while (targetel.getScreenCTM == null && targetel.parentNode != null) {
-      targetel = targetel.parentNode
+  // Private: Walks the DOM from the target element up to document looking for elements with a y scroll value > 0.
+  // Return the sum top value in px of all the scrolled elements.
+  function getScrollTop(targetShape) {
+    let parent = targetShape.parentNode;
+    let scrollTop = 0;
+    while (parent !== document) {
+      scrollTop += parent.scrollTop;
+      parent = parent.parentNode;
     }
 
-    var bbox       = {},
-        matrix     = targetel.getScreenCTM(),
-        tbbox      = targetel.getBBox(),
-        width      = tbbox.width,
-        height     = tbbox.height,
-        x          = tbbox.x,
-        y          = tbbox.y
+    return scrollTop;
+  }
 
-    point.x = x
-    point.y = y
-    bbox.nw = point.matrixTransform(matrix)
-    point.x += width
-    bbox.ne = point.matrixTransform(matrix)
-    point.y += height
-    bbox.se = point.matrixTransform(matrix)
-    point.x -= width
-    bbox.sw = point.matrixTransform(matrix)
-    point.y -= height / 2
-    bbox.w = point.matrixTransform(matrix)
-    point.x += width
-    bbox.e = point.matrixTransform(matrix)
-    point.x -= width / 2
-    point.y -= height / 2
-    bbox.n = point.matrixTransform(matrix)
-    point.y += height
-    bbox.s = point.matrixTransform(matrix)
+  // Private: Walks the DOM from the target element up to document looking for elements with an x scroll value > 0.
+  // Return the sum left value in px of all the scrolled elements.
+  function getScrollLeft(targetShape) {
+    let parent = targetShape.parentNode;
+    let scrollLeft = 0;
+    while (parent !== document) {
+      scrollLeft += parent.scrollLeft;
+      parent = parent.parentNode;
+    }
 
-    return bbox
+    return scrollLeft;
   }
 
   // Private - replace D3JS 3.X d3.functor() function
