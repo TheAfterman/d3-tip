@@ -1,6 +1,6 @@
 {
-  "name": "d3-tip",
-  "version": "0.9.1",
+  "name": "d3-tip-2021",
+  "version": "0.10.0",
   "description": "Tooltips for d3 svg visualizations",
   "keywords": ["d3", "tooltip"],
   "homepage": "https://github.com/Caged/d3-tip",
@@ -11,6 +11,7 @@
   "license": "MIT",
   "author":
     "Justin Palmer <justin@labratrevenge.com> (http://labratrevenge.com/d3-tip)",
+  "contributors": ["Samih Munshi <samih.munshi@brightmast.com> (https://github.com/TheAfterman)"],
   "main": "dist/index.js",
   "module": "index.js",
   "jsnext:main": "index.js",
@@ -20,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Caged/d3-tip"
+    "url": "https://github.com/TheAfterman/d3-tip"
   },
   "scripts": {
     "circle:lint":
